@@ -2,22 +2,18 @@ extern crate dotenv;
 #[macro_use] extern crate rocket;
 
 use dotenv::dotenv;
-use entities::{prelude::*, *};
-use rocket::{serde::json::Json, State};
-use sea_orm::{Database, DbErr, DatabaseConnection, EntityTrait};
+use rocket::State;
+use entities::{*, prelude::*};
+use sea_orm::{Database, DatabaseConnection, EntityTrait};
+use rocket::serde::json::Json;
 use std::env;
 
 mod entities;
 
 #[get("/list")]
-async fn list(db: &State<DatabaseConnection>) -> Json<Vec<String>> {
+async fn list(db: &State<DatabaseConnection>) -> Json<Vec<game::Model>> {
     let db = db as &DatabaseConnection;
-
-    let games = Game::find()
-        .into_json()
-        .all(db)
-        .await;
-    games
+    Json(Game::find().all(db).await.unwrap())
 }
 
 #[launch]
