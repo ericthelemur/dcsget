@@ -46,6 +46,30 @@ async fn commands(db: &State<DatabaseConnection>, id: u32) -> Option<Json<Comman
     }
 }
 
+#[derive(FromForm)]
+struct NewGame<'a> {
+    title: String,
+    description: String,
+    version: String,
+    image_url: String,
+    archive: TempFile<'a>,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct NewGameResponse {
+    id: u32,
+}
+
+#[post("/new", data = "<new_game>")]
+async fn upload(db: &State<DatabaseConnection>, new_game: Form<NewGame<'_>>) -> Option<Json<NewGameResponse>> {
+    let file_name = new_game.title.replace(" ", "") + "-v" + &new_game.version + ".tar.gz";
+    // new_game.archive.persist_to(path)
+
+
+    None
+}
+
 #[launch]
 async fn rocket() -> _ {
     dotenv().ok();

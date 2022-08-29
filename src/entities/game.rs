@@ -6,6 +6,7 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "game")]
 pub struct Model {
     #[sea_orm(primary_key)]
+    #[serde(skip_deserializing)]
     pub id: i32,
     pub title: String,
     pub description: String,
