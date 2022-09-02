@@ -7,7 +7,7 @@ use rocket::fs::TempFile;
 use rocket::serde::{Serialize, Deserialize};
 use rocket::form::Form;
 use entities::{*, prelude::*};
-use sea_orm::{Database, DatabaseConnection, EntityTrait};
+use sea_orm::{Database, DatabaseConnection, EntityTrait, Set, ActiveModelTrait};
 use rocket::serde::json::Json;
 use std::env;
 
@@ -55,19 +55,28 @@ struct NewGame<'a> {
     archive: TempFile<'a>,
 }
 
-#[derive(Serialize)]
-#[serde(crate = "rocket::serde")]
-struct NewGameResponse {
-    id: u32,
-}
-
 #[post("/new", data = "<new_game>")]
-async fn upload(db: &State<DatabaseConnection>, new_game: Form<NewGame<'_>>) -> Option<Json<NewGameResponse>> {
+async fn upload(db: &State<DatabaseConnection>, mut new_game: Form<NewGame<'_>>) -> Option<Json<u32>> {
+    let db = db as &DatabaseConnection;
     let file_name = new_game.title.replace(" ", "") + "-v" + &new_game.version + ".tar.gz";
-    // new_game.archive.persist_to(path)
-
-
-    None
+    let g = game::ActiveModel { 
+        title: Set(new_game.title.clone()), 
+        description: Set(new_game.description.clone()), 
+        version: Set(new_game.version.clone()), 
+        image_url: Set(Some(new_game.image_url.clone())), 
+        archive: Set(file_name.clone()),
+        ..Default::default()
+    };
+    let res = g.save(db).await;
+    
+    if let Ok(g) = res {
+        let path = "games/".to_string() + &file_name;
+        new_game.archive.persist_to(path).await;
+        
+        Some(Json(g.id.unwrap() as u32))
+    } else {
+        None
+    }
 }
 
 #[launch]
